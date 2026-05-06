@@ -1,7 +1,7 @@
 const { Database } = require('node-sqlite3-wasm');
 const path = require('path');
 
-const DB_PATH = path.resolve(__dirname, '..', 'menta.db');
+const DB_PATH = path.join(__dirname, 'data', 'menta.db');
 const db = new Database(DB_PATH);
 
 db.exec("PRAGMA journal_mode = WAL");

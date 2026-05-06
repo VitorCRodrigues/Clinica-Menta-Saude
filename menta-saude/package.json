@@ -18,6 +18,6 @@
   },
   "nodemonConfig": {
     "delay": 1000,
-    "ignore": ["menta.db", "menta.db.lock", "*.db", "*.db.lock", "client/"]
+    "ignore": ["server/data/", "client/", "*.db", "*.db-lock", "*.db.lock", "menta.db*", "server/menta.db*"]
   }
 }
