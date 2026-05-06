@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npm show *)",
+      "Bash(powershell -Command \"Select-String -Pattern '\\\\\"[0-9]'\")",
+      "Bash(Select-Object -Last 5)",
+      "PowerShell(npm show node-sqlite3-wasm version 2>&1)",
+      "Bash(node -e ' *)"
+    ]
+  }
+}

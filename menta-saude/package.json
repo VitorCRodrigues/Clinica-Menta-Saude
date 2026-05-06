@@ -1,0 +1,23 @@
+{
+  "name": "menta-saude",
+  "version": "1.0.0",
+  "description": "Sistema interno da Clínica Menta Saúde",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "nodemon server/index.js",
+    "client": "npm run dev --prefix client"
+  },
+  "dependencies": {
+    "node-sqlite3-wasm": "^0.8.56",
+    "concurrently": "^8.2.2",
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  },
+  "nodemonConfig": {
+    "delay": 1000,
+    "ignore": ["menta.db", "menta.db.lock", "*.db", "*.db.lock", "client/"]
+  }
+}
