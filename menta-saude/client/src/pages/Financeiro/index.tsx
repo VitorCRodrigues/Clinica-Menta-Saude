@@ -26,7 +26,7 @@ const rotuloForma: Record<string, string> = {
 
 const corStatusPag: Record<string, string> = {
   pendente: 'bg-yellow-100 text-yellow-700',
-  pago: 'bg-green-100 text-green-700',
+  pago: 'bg-principal-claro text-principal',
   cancelado: 'bg-red-100 text-red-700',
 }
 
@@ -115,7 +115,7 @@ export default function FinanceiroPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
           <p className="text-xs text-gray-400 uppercase mb-1">Recebido</p>
-          <p className="text-2xl font-bold text-green-600">{formatarMoeda(totalRecebido)}</p>
+          <p className="text-2xl font-bold text-primario">{formatarMoeda(totalRecebido)}</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
           <p className="text-xs text-gray-400 uppercase mb-1">A receber</p>
@@ -238,7 +238,7 @@ export default function FinanceiroPage() {
                       <td className="px-4 py-3 font-semibold text-principal">{formatarMoeda(r.valor_repasse)}</td>
                       <td className="px-4 py-3 text-gray-500">{r.competencia || '—'}</td>
                       <td className="px-4 py-3">
-                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${r.status === 'pago' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${r.status === 'pago' ? 'bg-principal-claro text-principal' : 'bg-yellow-100 text-yellow-700'}`}>
                           {r.status}
                         </span>
                       </td>

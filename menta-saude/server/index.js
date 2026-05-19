@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const { inicializarBanco } = require('./database');
 
 const app = express();
 const PORTA = process.env.PORT || 3001;
@@ -20,6 +21,11 @@ app.use((err, req, res, next) => {
   res.status(500).json({ erro: 'Erro interno do servidor', detalhe: err.message });
 });
 
-app.listen(PORTA, () => {
-  console.log(`Servidor Menta Saúde rodando na porta ${PORTA}`);
+inicializarBanco().then(() => {
+  app.listen(PORTA, () => {
+    console.log(`Servidor Menta Saúde rodando na porta ${PORTA}`);
+  });
+}).catch(err => {
+  console.error('Erro ao inicializar banco:', err);
+  process.exit(1);
 });

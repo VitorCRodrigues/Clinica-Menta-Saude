@@ -14,7 +14,7 @@ const rotuloStatus: Record<string, string> = {
 
 const corStatus: Record<string, string> = {
   agendado: 'bg-blue-100 text-blue-700',
-  confirmado: 'bg-green-100 text-green-700',
+  confirmado: 'bg-principal-claro text-principal',
   realizado: 'bg-principal-claro text-principal',
   cancelado: 'bg-red-100 text-red-700',
   faltou: 'bg-yellow-100 text-yellow-700',
@@ -62,15 +62,15 @@ export default function Dashboard() {
 
       {/* Cards principais */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-t-[3px] border-t-primario p-5">
           <p className="text-sm text-gray-500 mb-1">Atendimentos hoje</p>
           <p className="text-3xl font-bold text-principal">{dados.atendimentos_hoje}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-t-[3px] border-t-primario p-5">
           <p className="text-sm text-gray-500 mb-1">Recebido hoje</p>
           <p className="text-3xl font-bold text-primario">{formatarMoeda(dados.recebido_hoje)}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-t-[3px] border-t-primario p-5">
           <p className="text-sm text-gray-500 mb-2">Status de hoje</p>
           <div className="flex flex-wrap gap-2">
             {dados.status_hoje.length === 0 && <span className="text-gray-400 text-sm">Nenhum</span>}

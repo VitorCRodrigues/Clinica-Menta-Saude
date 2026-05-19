@@ -12,8 +12,15 @@ export default function Sidebar() {
   return (
     <aside className="w-56 min-h-screen bg-principal flex flex-col">
       <div className="px-6 py-5 border-b border-principal-escuro">
-        <h1 className="text-white text-xl font-bold tracking-wide">Menta Saúde</h1>
-        <p className="text-green-200 text-xs mt-0.5">Clínica Odontológica</p>
+        <div className="flex items-center gap-3">
+          <svg width="28" height="32" viewBox="0 0 24 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 4 C2 4 0 10 0 18 C0 28 4 36 8 36 C10 36 11 32 12 26 C13 32 14 36 16 36 C20 36 24 28 24 18 C24 10 22 4 16 4 C14 4 13 5 12 7 C11 5 10 4 8 4Z" fill="white"/>
+          </svg>
+          <div>
+            <p className="text-white text-[9px] font-medium tracking-widest uppercase leading-none mb-1">CLÍNICA DENTÁRIA</p>
+            <p className="text-white text-2xl font-light tracking-wide leading-none">menta</p>
+          </div>
+        </div>
       </div>
 
       <nav className="flex-1 py-4">
@@ -24,8 +31,8 @@ export default function Sidebar() {
             className={({ isActive }) =>
               `flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors ${
                 isActive
-                  ? 'bg-principal-escuro text-white border-r-4 border-primario'
-                  : 'text-green-100 hover:bg-principal-escuro hover:text-white'
+                  ? 'bg-primario text-white border-l-4 border-white'
+                  : 'text-white/80 hover:bg-principal-escuro hover:text-white'
               }`
             }
           >
@@ -36,7 +43,7 @@ export default function Sidebar() {
       </nav>
 
       <div className="px-6 py-4 border-t border-principal-escuro">
-        <p className="text-green-300 text-xs">v1.0.0</p>
+        <p className="text-white/50 text-xs">v1.0.0</p>
       </div>
     </aside>
   )

@@ -1,14 +1,29 @@
-const { Database } = require('node-sqlite3-wasm');
+const initSqlJs = require('sql.js');
+const fs = require('fs');
 const path = require('path');
 
-const DB_PATH = path.join(__dirname, 'data', 'menta.db');
-const db = new Database(DB_PATH);
+const DATA_DIR = path.join(__dirname, 'data');
+const DB_PATH = path.join(DATA_DIR, 'menta.db');
 
-db.exec("PRAGMA journal_mode = WAL");
-db.exec("PRAGMA foreign_keys = ON");
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS pacientes (
+let db;
+
+async function inicializarBanco() {
+  const SQL = await initSqlJs();
+
+  if (fs.existsSync(DB_PATH)) {
+    const fileBuffer = fs.readFileSync(DB_PATH);
+    db = new SQL.Database(fileBuffer);
+  } else {
+    db = new SQL.Database();
+  }
+
+  db.run('PRAGMA foreign_keys = ON');
+
+  db.run(`CREATE TABLE IF NOT EXISTS pacientes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nome TEXT NOT NULL,
     telefone TEXT,
@@ -19,9 +34,9 @@ db.exec(`
     status_retorno TEXT DEFAULT 'ativo',
     origem TEXT,
     created_at TEXT DEFAULT (datetime('now'))
-  );
+  )`);
 
-  CREATE TABLE IF NOT EXISTS profissionais (
+  db.run(`CREATE TABLE IF NOT EXISTS profissionais (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nome TEXT NOT NULL,
     especialidade TEXT,
@@ -30,17 +45,17 @@ db.exec(`
     percentual_parcelado REAL,
     observacoes TEXT,
     ativo INTEGER DEFAULT 1
-  );
+  )`);
 
-  CREATE TABLE IF NOT EXISTS servicos (
+  db.run(`CREATE TABLE IF NOT EXISTS servicos (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nome TEXT NOT NULL,
     valor_padrao REAL,
     duracao_minutos INTEGER,
     ativo INTEGER DEFAULT 1
-  );
+  )`);
 
-  CREATE TABLE IF NOT EXISTS atendimentos (
+  db.run(`CREATE TABLE IF NOT EXISTS atendimentos (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     paciente_id INTEGER REFERENCES pacientes(id),
     profissional_id INTEGER REFERENCES profissionais(id),
@@ -51,9 +66,9 @@ db.exec(`
     status TEXT DEFAULT 'agendado',
     observacoes TEXT,
     created_at TEXT DEFAULT (datetime('now'))
-  );
+  )`);
 
-  CREATE TABLE IF NOT EXISTS financeiro (
+  db.run(`CREATE TABLE IF NOT EXISTS financeiro (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     atendimento_id INTEGER REFERENCES atendimentos(id),
     valor_recebido REAL,
@@ -63,9 +78,9 @@ db.exec(`
     data_pagamento TEXT,
     observacoes TEXT,
     created_at TEXT DEFAULT (datetime('now'))
-  );
+  )`);
 
-  CREATE TABLE IF NOT EXISTS repasses (
+  db.run(`CREATE TABLE IF NOT EXISTS repasses (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     profissional_id INTEGER REFERENCES profissionais(id),
     atendimento_id INTEGER REFERENCES atendimentos(id),
@@ -77,11 +92,51 @@ db.exec(`
     status TEXT DEFAULT 'pendente',
     competencia TEXT,
     created_at TEXT DEFAULT (datetime('now'))
-  );
-`);
+  )`);
 
-process.on('exit', () => db.close());
-process.on('SIGINT', () => { db.close(); process.exit(); });
-process.on('SIGTERM', () => { db.close(); process.exit(); });
+  salvarBanco();
+  return db;
+}
 
-module.exports = db;
+function salvarBanco() {
+  const data = db.export();
+  fs.writeFileSync(DB_PATH, Buffer.from(data));
+}
+
+function normalizar(params) {
+  if (params === undefined || params === null) return [];
+  return Array.isArray(params) ? params : [params];
+}
+
+function run(sql, params = []) {
+  db.run(sql, normalizar(params));
+  const result = db.exec('SELECT last_insert_rowid()');
+  const lastInsertRowid = result[0].values[0][0];
+  salvarBanco();
+  return { lastInsertRowid };
+}
+
+function get(sql, params = []) {
+  const stmt = db.prepare(sql);
+  stmt.bind(normalizar(params));
+  if (stmt.step()) {
+    const row = stmt.getAsObject();
+    stmt.free();
+    return row;
+  }
+  stmt.free();
+  return null;
+}
+
+function all(sql, params = []) {
+  const stmt = db.prepare(sql);
+  stmt.bind(normalizar(params));
+  const rows = [];
+  while (stmt.step()) {
+    rows.push(stmt.getAsObject());
+  }
+  stmt.free();
+  return rows;
+}
+
+module.exports = { inicializarBanco, run, get, all, salvarBanco };

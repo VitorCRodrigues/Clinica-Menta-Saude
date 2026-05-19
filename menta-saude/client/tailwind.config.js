@@ -7,11 +7,11 @@ export default {
   theme: {
     extend: {
       colors: {
-        principal: '#0F6E56',
-        'principal-escuro': '#0a5240',
-        'principal-claro': '#e6f4f0',
-        primario: '#1D9E75',
-        'primario-hover': '#179065',
+        principal: '#008F84',
+        'principal-escuro': '#007A70',
+        'principal-claro': '#e6f8f7',
+        primario: '#00A99D',
+        'primario-hover': '#008F84',
       }
     },
   },

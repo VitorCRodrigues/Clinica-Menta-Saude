@@ -7,7 +7,7 @@ import BotaoPrimario from '../../components/BotaoPrimario'
 import CampoTexto from '../../components/CampoTexto'
 
 const corStatus: Record<string, string> = {
-  ativo: 'bg-green-100 text-green-700',
+  ativo: 'bg-principal-claro text-principal',
   inativo: 'bg-gray-100 text-gray-600',
   aguardando: 'bg-yellow-100 text-yellow-700',
 }

@@ -160,7 +160,7 @@ export default function Configuracoes() {
                           <td className="px-4 py-3 text-gray-500">{p.percentual_cartao ? `${p.percentual_cartao}%` : '—'}</td>
                           <td className="px-4 py-3 text-gray-500">{p.percentual_parcelado ? `${p.percentual_parcelado}%` : '—'}</td>
                           <td className="px-4 py-3">
-                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${p.ativo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${p.ativo ? 'bg-principal-claro text-principal' : 'bg-gray-100 text-gray-500'}`}>
                               {p.ativo ? 'Ativo' : 'Inativo'}
                             </span>
                           </td>
@@ -207,7 +207,7 @@ export default function Configuracoes() {
                           <td className="px-4 py-3 text-gray-500">{formatarMoeda(s.valor_padrao)}</td>
                           <td className="px-4 py-3 text-gray-500">{s.duracao_minutos ? `${s.duracao_minutos} min` : '—'}</td>
                           <td className="px-4 py-3">
-                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${s.ativo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${s.ativo ? 'bg-principal-claro text-principal' : 'bg-gray-100 text-gray-500'}`}>
                               {s.ativo ? 'Ativo' : 'Inativo'}
                             </span>
                           </td>

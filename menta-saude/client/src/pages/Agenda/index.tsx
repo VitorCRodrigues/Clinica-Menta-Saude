@@ -12,7 +12,7 @@ function formatarMoeda(valor?: number) {
 
 const corStatus: Record<string, string> = {
   agendado: 'bg-blue-100 text-blue-700',
-  confirmado: 'bg-green-100 text-green-700',
+  confirmado: 'bg-principal-claro text-principal',
   realizado: 'bg-principal-claro text-principal',
   cancelado: 'bg-red-100 text-red-700',
   faltou: 'bg-yellow-100 text-yellow-700',
@@ -78,7 +78,7 @@ export default function Agenda() {
         </button>
         <button
           onClick={() => setData(new Date().toISOString().split('T')[0])}
-          className="px-3 py-1.5 bg-principal-claro text-principal rounded-lg text-sm font-medium hover:bg-green-100"
+          className="px-3 py-1.5 bg-principal-claro text-principal rounded-lg text-sm font-medium hover:bg-principal-claro/70"
         >
           Hoje
         </button>
