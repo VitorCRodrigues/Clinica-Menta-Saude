@@ -8,6 +8,7 @@ const PORTA = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+app.use('/api/webhook', require('./routes/webhook'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/pacientes', require('./routes/pacientes'));
 app.use('/api/profissionais', require('./routes/profissionais'));
