@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { listarFinanceiro, listarRepasses, atualizarFinanceiro, atualizarRepasse, listarAtendimentos, listarProfissionais } from '../../services/api'
-import type { Financeiro, Repasse, Atendimento, Profissional } from '../../types'
+import type { Financeiro, Repasse, Atendimento, Profissional, FormaPagamento } from '../../types'
 import Carregando from '../../components/Carregando'
 import BotaoPrimario from '../../components/BotaoPrimario'
 import CampoSelect from '../../components/CampoSelect'
@@ -30,7 +30,29 @@ const corStatusPag: Record<string, string> = {
   cancelado: 'bg-red-100 text-red-700',
 }
 
+const opcoesForma = [
+  { valor: 'dinheiro', rotulo: 'Dinheiro' },
+  { valor: 'pix', rotulo: 'Pix' },
+  { valor: 'cartao_debito', rotulo: 'Cartão Débito' },
+  { valor: 'cartao_credito', rotulo: 'Cartão Crédito' },
+  { valor: 'transferencia', rotulo: 'Transferência' },
+]
+
 type Aba = 'pagamentos' | 'repasses'
+
+const formaPagamentoInicial = {
+  atendimento_id: '',
+  valor_recebido: '',
+  forma_pagamento: 'pix',
+  num_parcelas: '1',
+  usar_segunda_forma: false,
+  forma_pagamento_2: 'dinheiro',
+  valor_pagamento_2: '',
+  num_parcelas_2: '1',
+  status_pagamento: 'pendente',
+  data_pagamento: '',
+  observacoes: '',
+}
 
 export default function FinanceiroPage() {
   const [aba, setAba] = useState<Aba>('pagamentos')
@@ -39,16 +61,8 @@ export default function FinanceiroPage() {
   const [atendimentos, setAtendimentos] = useState<Atendimento[]>([])
   const [profissionais, setProfissionais] = useState<Profissional[]>([])
   const [carregando, setCarregando] = useState(true)
-  const [mostarModal, setMostrarModal] = useState(false)
-  const [form, setForm] = useState({
-    atendimento_id: '',
-    valor_recebido: '',
-    forma_pagamento: 'pix',
-    num_parcelas: '1',
-    status_pagamento: 'pendente',
-    data_pagamento: '',
-    observacoes: '',
-  })
+  const [mostrarModal, setMostrarModal] = useState(false)
+  const [form, setForm] = useState(formaPagamentoInicial)
   const [salvando, setSalvando] = useState(false)
   const [filtroStatus, setFiltroStatus] = useState('')
 
@@ -74,16 +88,23 @@ export default function FinanceiroPage() {
     setSalvando(true)
     try {
       const { criarFinanceiro } = await import('../../services/api')
+      const vPag1 = Number(form.valor_recebido)
+      const vPag2 = form.usar_segunda_forma ? Number(form.valor_pagamento_2) : 0
+
       await criarFinanceiro({
         atendimento_id: Number(form.atendimento_id),
-        valor_recebido: Number(form.valor_recebido),
-        forma_pagamento: form.forma_pagamento as Financeiro['forma_pagamento'],
+        valor_recebido: vPag1,
+        forma_pagamento: form.forma_pagamento as FormaPagamento,
         num_parcelas: Number(form.num_parcelas),
+        forma_pagamento_2: form.usar_segunda_forma ? form.forma_pagamento_2 as FormaPagamento : undefined,
+        valor_pagamento_2: vPag2 || undefined,
+        num_parcelas_2: form.usar_segunda_forma ? Number(form.num_parcelas_2) : undefined,
         status_pagamento: form.status_pagamento as Financeiro['status_pagamento'],
         data_pagamento: form.data_pagamento || undefined,
         observacoes: form.observacoes || undefined,
       })
       setMostrarModal(false)
+      setForm(formaPagamentoInicial)
       carregarDados()
     } finally {
       setSalvando(false)
@@ -103,6 +124,10 @@ export default function FinanceiroPage() {
   const totalRecebido = registros.filter((r) => r.status_pagamento === 'pago').reduce((s, r) => s + r.valor_recebido, 0)
   const totalPendente = registros.filter((r) => r.status_pagamento === 'pendente').reduce((s, r) => s + r.valor_recebido, 0)
   const totalRepasses = repasses.filter((r) => r.status === 'pendente').reduce((s, r) => s + r.valor_repasse, 0)
+
+  const vPag1Modal = Number(form.valor_recebido) || 0
+  const vPag2Modal = form.usar_segunda_forma ? (Number(form.valor_pagamento_2) || 0) : 0
+  const totalModal = vPag1Modal + vPag2Modal
 
   return (
     <div className="p-8">
@@ -165,9 +190,8 @@ export default function FinanceiroPage() {
                     <tr>
                       <th className="px-4 py-3 text-left">Paciente</th>
                       <th className="px-4 py-3 text-left">Data consulta</th>
-                      <th className="px-4 py-3 text-left">Valor</th>
-                      <th className="px-4 py-3 text-left">Forma</th>
-                      <th className="px-4 py-3 text-left">Parcelas</th>
+                      <th className="px-4 py-3 text-left">Total</th>
+                      <th className="px-4 py-3 text-left">Formas</th>
                       <th className="px-4 py-3 text-left">Status</th>
                       <th className="px-4 py-3 text-left">Data pag.</th>
                       <th className="px-4 py-3"></th>
@@ -179,8 +203,16 @@ export default function FinanceiroPage() {
                         <td className="px-4 py-3 font-medium">{r.paciente_nome || '—'}</td>
                         <td className="px-4 py-3 text-gray-500">{formatarData(r.data_realizacao)}</td>
                         <td className="px-4 py-3 font-medium">{formatarMoeda(r.valor_recebido)}</td>
-                        <td className="px-4 py-3 text-gray-500">{rotuloForma[r.forma_pagamento || ''] || r.forma_pagamento || '—'}</td>
-                        <td className="px-4 py-3 text-gray-500">{r.num_parcelas}x</td>
+                        <td className="px-4 py-3 text-gray-500 text-xs">
+                          <span>{rotuloForma[r.forma_pagamento || ''] || r.forma_pagamento || '—'}</span>
+                          {r.num_parcelas > 1 && <span className="ml-1 text-gray-400">{r.num_parcelas}x</span>}
+                          {r.forma_pagamento_2 && (
+                            <span className="block text-gray-400">
+                              + {rotuloForma[r.forma_pagamento_2] || r.forma_pagamento_2}
+                              {r.valor_pagamento_2 ? ` (${formatarMoeda(r.valor_pagamento_2)})` : ''}
+                            </span>
+                          )}
+                        </td>
                         <td className="px-4 py-3">
                           <span className={`text-xs px-2 py-1 rounded-full font-medium ${corStatusPag[r.status_pagamento]}`}>
                             {r.status_pagamento}
@@ -234,7 +266,7 @@ export default function FinanceiroPage() {
                       <td className="px-4 py-3 text-gray-500">{r.paciente_nome || '—'}</td>
                       <td className="px-4 py-3 text-gray-500">{formatarData(r.data_realizacao)}</td>
                       <td className="px-4 py-3">{formatarMoeda(r.valor_bruto)}</td>
-                      <td className="px-4 py-3 text-gray-500">{r.percentual_aplicado}%</td>
+                      <td className="px-4 py-3 text-gray-500">{r.percentual_aplicado ? `${r.percentual_aplicado}%` : '—'}</td>
                       <td className="px-4 py-3 font-semibold text-principal">{formatarMoeda(r.valor_repasse)}</td>
                       <td className="px-4 py-3 text-gray-500">{r.competencia || '—'}</td>
                       <td className="px-4 py-3">
@@ -262,9 +294,9 @@ export default function FinanceiroPage() {
       )}
 
       {/* Modal novo pagamento */}
-      {mostarModal && (
+      {mostrarModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Registrar pagamento</h3>
             <form onSubmit={salvarPagamento} className="flex flex-col gap-3">
               <CampoSelect
@@ -273,40 +305,96 @@ export default function FinanceiroPage() {
                 onChange={(e) => setForm((f) => ({ ...f, atendimento_id: e.target.value }))}
                 opcoes={atendimentos.map((a) => ({ valor: a.id, rotulo: `${a.paciente_nome} — ${formatarData(a.data_realizacao)}` }))}
               />
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-gray-700">Valor recebido *</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={form.valor_recebido}
-                  onChange={(e) => setForm((f) => ({ ...f, valor_recebido: e.target.value }))}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primario"
-                  required
-                />
-              </div>
-              <CampoSelect
-                rotulo="Forma de pagamento"
-                value={form.forma_pagamento}
-                onChange={(e) => setForm((f) => ({ ...f, forma_pagamento: e.target.value }))}
-                opcoes={[
-                  { valor: 'dinheiro', rotulo: 'Dinheiro' },
-                  { valor: 'pix', rotulo: 'Pix' },
-                  { valor: 'cartao_debito', rotulo: 'Cartão Débito' },
-                  { valor: 'cartao_credito', rotulo: 'Cartão Crédito' },
-                  { valor: 'transferencia', rotulo: 'Transferência' },
-                ]}
-              />
-              <div className="grid grid-cols-2 gap-3">
+
+              {/* Forma de pagamento 1 */}
+              <div className="border border-gray-200 rounded-lg p-3 flex flex-col gap-3">
+                <p className="text-xs font-semibold text-gray-500 uppercase">Forma de pagamento 1</p>
                 <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium text-gray-700">Parcelas</label>
+                  <label className="text-sm font-medium text-gray-700">Valor *</label>
                   <input
                     type="number"
-                    min="1"
-                    value={form.num_parcelas}
-                    onChange={(e) => setForm((f) => ({ ...f, num_parcelas: e.target.value }))}
+                    step="0.01"
+                    value={form.valor_recebido}
+                    onChange={(e) => setForm((f) => ({ ...f, valor_recebido: e.target.value }))}
                     className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primario"
+                    required
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <CampoSelect
+                    rotulo="Forma"
+                    value={form.forma_pagamento}
+                    onChange={(e) => setForm((f) => ({ ...f, forma_pagamento: e.target.value }))}
+                    opcoes={opcoesForma}
+                  />
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium text-gray-700">Parcelas</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={form.num_parcelas}
+                      onChange={(e) => setForm((f) => ({ ...f, num_parcelas: e.target.value }))}
+                      className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primario"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Toggle segunda forma */}
+              <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-600">
+                <input
+                  type="checkbox"
+                  checked={form.usar_segunda_forma}
+                  onChange={(e) => setForm((f) => ({ ...f, usar_segunda_forma: e.target.checked }))}
+                  className="rounded"
+                />
+                Adicionar segunda forma de pagamento
+              </label>
+
+              {/* Forma de pagamento 2 */}
+              {form.usar_segunda_forma && (
+                <div className="border border-gray-200 rounded-lg p-3 flex flex-col gap-3 bg-gray-50">
+                  <p className="text-xs font-semibold text-gray-500 uppercase">Forma de pagamento 2</p>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium text-gray-700">Valor</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={form.valor_pagamento_2}
+                      onChange={(e) => setForm((f) => ({ ...f, valor_pagamento_2: e.target.value }))}
+                      className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primario"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <CampoSelect
+                      rotulo="Forma"
+                      value={form.forma_pagamento_2}
+                      onChange={(e) => setForm((f) => ({ ...f, forma_pagamento_2: e.target.value }))}
+                      opcoes={opcoesForma}
+                    />
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-medium text-gray-700">Parcelas</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={form.num_parcelas_2}
+                        onChange={(e) => setForm((f) => ({ ...f, num_parcelas_2: e.target.value }))}
+                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primario"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Total */}
+              {form.usar_segunda_forma && totalModal > 0 && (
+                <div className="flex justify-between items-center bg-principal-claro rounded-lg px-4 py-2">
+                  <span className="text-sm font-medium text-principal">Total recebido</span>
+                  <span className="text-base font-bold text-principal">{formatarMoeda(totalModal)}</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
                 <CampoSelect
                   rotulo="Status"
                   value={form.status_pagamento}
@@ -316,20 +404,21 @@ export default function FinanceiroPage() {
                     { valor: 'pago', rotulo: 'Pago' },
                   ]}
                 />
+                {form.status_pagamento === 'pago' && (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium text-gray-700">Data do pagamento</label>
+                    <input
+                      type="date"
+                      value={form.data_pagamento}
+                      onChange={(e) => setForm((f) => ({ ...f, data_pagamento: e.target.value }))}
+                      className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primario"
+                    />
+                  </div>
+                )}
               </div>
-              {form.status_pagamento === 'pago' && (
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium text-gray-700">Data do pagamento</label>
-                  <input
-                    type="date"
-                    value={form.data_pagamento}
-                    onChange={(e) => setForm((f) => ({ ...f, data_pagamento: e.target.value }))}
-                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primario"
-                  />
-                </div>
-              )}
+
               <div className="flex gap-3 justify-end pt-2">
-                <BotaoPrimario type="button" variante="secundario" onClick={() => setMostrarModal(false)}>
+                <BotaoPrimario type="button" variante="secundario" onClick={() => { setMostrarModal(false); setForm(formaPagamentoInicial) }}>
                   Cancelar
                 </BotaoPrimario>
                 <BotaoPrimario type="submit" disabled={salvando}>

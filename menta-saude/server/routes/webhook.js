@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { run, get, all } = require('../database');
+const { calcularRepasseValor, getFormaPredominante } = require('../utils/repasse');
 
 const n = (v) => (v !== undefined && v !== '' ? v : null);
 
@@ -19,14 +20,17 @@ router.post('/paciente', (req, res) => {
     const telefone = body['Telefone'] || body['telefone'] || null;
     const email = body['Email'] || body['email'] || null;
     const data_nascimento = body['Data de nascimento'] || body['data_nascimento'] || null;
+    const cpf = body['CPF'] || body['cpf'] || null;
+    const endereco = body['Endereço'] || body['Endereco'] || body['endereco'] || null;
+    const profissao = body['Profissão'] || body['Profissao'] || body['profissao'] || null;
     const origem = body['origem'] || 'webhook';
 
     if (!nome) return res.status(400).json({ erro: 'Campo "Nome completo" é obrigatório' });
 
     const resultado = run(`
-      INSERT INTO pacientes (nome, telefone, email, data_nascimento, status_retorno, origem)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `, [nome, n(telefone), n(email), n(data_nascimento), 'ativo', origem]);
+      INSERT INTO pacientes (nome, telefone, email, data_nascimento, cpf, endereco, profissao, status_retorno, origem)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [nome, n(telefone), n(email), n(data_nascimento), n(cpf), n(endereco), n(profissao), 'ativo', origem]);
 
     const novo = get('SELECT * FROM pacientes WHERE id = ?', resultado.lastInsertRowid);
     res.status(201).json(novo);
@@ -118,8 +122,10 @@ router.post('/financeiro', (req, res) => {
     const procedimento = body['Procedimento realizado'] || body['procedimento'] || null;
     const valorRecebido = parseFloat(String(body['Valor cobrado'] || body['valor'] || body['valor_recebido'] || '0').replace(',', '.')) || 0;
     const formaPagamento = body['Forma de pagamento'] || body['forma_pagamento'] || null;
-    const foiParcelado = body['Foi parcelado?'] || body['parcelado'] || 'Não';
     const numParcelas = parseInt(body['Número de parcelas'] || body['num_parcelas'] || '1') || 1;
+    const formaPagamento2 = body['Forma de pagamento 2'] || body['forma_pagamento_2'] || null;
+    const valorPagamento2 = formaPagamento2 ? parseFloat(String(body['Valor pagamento 2'] || body['valor_pagamento_2'] || '0').replace(',', '.')) || 0 : 0;
+    const numParcelas2 = parseInt(body['Parcelas 2'] || body['num_parcelas_2'] || '1') || 1;
     const dataPagamento = parseDate(body['Data de pagamento'] || body['data_pagamento']);
     const statusRaw = (body['Status'] || body['status_pagamento'] || 'pendente').toLowerCase();
 
@@ -129,14 +135,15 @@ router.post('/financeiro', (req, res) => {
     const statusMap = { 'pago': 'pago', 'recebido': 'pago', 'pendente': 'pendente', 'cancelado': 'cancelado' };
     const statusPagamento = statusMap[statusRaw] || statusRaw;
 
-    // Busca ou cria paciente
+    // valor_recebido total = forma1 + forma2
+    const valorTotal = valorRecebido + (valorPagamento2 || 0);
+
     let paciente = get('SELECT * FROM pacientes WHERE nome = ?', [nomePaciente]);
     if (!paciente) {
       const r = run('INSERT INTO pacientes (nome, status_retorno, origem) VALUES (?, ?, ?)', [nomePaciente, 'ativo', 'webhook']);
       paciente = get('SELECT * FROM pacientes WHERE id = ?', r.lastInsertRowid);
     }
 
-    // Busca ou cria profissional
     let profissionalId = null;
     let profissional = null;
     if (nomeDentista) {
@@ -148,7 +155,6 @@ router.post('/financeiro', (req, res) => {
       profissionalId = profissional.id;
     }
 
-    // Busca ou cria serviço
     let servicoId = null;
     if (procedimento) {
       let servico = get('SELECT * FROM servicos WHERE nome = ?', [procedimento]);
@@ -159,52 +165,48 @@ router.post('/financeiro', (req, res) => {
       servicoId = servico.id;
     }
 
-    // Busca atendimento mais recente do paciente
     let atendimento = get(
       'SELECT * FROM atendimentos WHERE paciente_id = ? ORDER BY created_at DESC LIMIT 1',
       [paciente.id]
     );
 
-    // Se não existe atendimento, cria um automaticamente
     if (!atendimento) {
       const dataHoje = new Date().toISOString().split('T')[0];
       const r = run(`
         INSERT INTO atendimentos (paciente_id, profissional_id, servico_id, data_realizacao, valor_cobrado, status)
         VALUES (?, ?, ?, ?, ?, ?)
-      `, [paciente.id, profissionalId, servicoId, dataPagamento || dataHoje, valorRecebido, 'realizado']);
+      `, [paciente.id, profissionalId, servicoId, dataPagamento || dataHoje, valorTotal, 'realizado']);
       atendimento = get('SELECT * FROM atendimentos WHERE id = ?', r.lastInsertRowid);
     }
 
-    // Cria registro financeiro
     const resultadoFin = run(`
-      INSERT INTO financeiro (atendimento_id, valor_recebido, forma_pagamento, num_parcelas, status_pagamento, data_pagamento)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `, [atendimento.id, valorRecebido, n(formaPagamento), numParcelas, statusPagamento, n(dataPagamento)]);
+      INSERT INTO financeiro (atendimento_id, valor_recebido, forma_pagamento, num_parcelas, forma_pagamento_2, valor_pagamento_2, num_parcelas_2, status_pagamento, data_pagamento)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [atendimento.id, valorTotal, n(formaPagamento), numParcelas, n(formaPagamento2), n(valorPagamento2) || null, numParcelas2, statusPagamento, n(dataPagamento)]);
 
     const financeiroId = resultadoFin.lastInsertRowid;
 
-    // Calcula e salva repasse baseado na regra do profissional
     let repasseCalculado = null;
-    if (profissional && valorRecebido > 0) {
-      let percentual = profissional.percentual_padrao || 0;
+    if (profissional && valorTotal > 0) {
+      const valorRepasse = calcularRepasseValor({
+        profissional,
+        valorTotal,
+        formaPagamento1: formaPagamento,
+        numParcelas1: numParcelas,
+        valorPag2: valorPagamento2,
+        formaPagamento2,
+        numParcelas2,
+        procedimento,
+      });
 
-      const fp = (formaPagamento || '').toLowerCase();
-      const parcelado = foiParcelado.toLowerCase() !== 'não' && foiParcelado.toLowerCase() !== 'nao' && numParcelas > 1;
-
-      if (parcelado && profissional.percentual_parcelado != null) {
-        percentual = profissional.percentual_parcelado;
-      } else if ((fp.includes('cartão') || fp.includes('cartao') || fp.includes('credito') || fp.includes('crédito') || fp.includes('débito') || fp.includes('debito')) && profissional.percentual_cartao != null) {
-        percentual = profissional.percentual_cartao;
-      }
-
-      if (percentual > 0) {
-        const valorRepasse = (valorRecebido * percentual) / 100;
+      if (valorRepasse != null && valorRepasse > 0) {
+        const formaPred = getFormaPredominante(formaPagamento, valorTotal, valorPagamento2, formaPagamento2);
         const competencia = (dataPagamento || new Date().toISOString().split('T')[0]).substring(0, 7);
 
         run(`
           INSERT INTO repasses (profissional_id, atendimento_id, financeiro_id, valor_bruto, percentual_aplicado, valor_repasse, forma_pagamento, status, competencia)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [profissionalId, atendimento.id, financeiroId, valorRecebido, percentual, valorRepasse, n(formaPagamento), 'pendente', competencia]);
+        `, [profissionalId, atendimento.id, financeiroId, valorTotal, profissional.percentual_padrao || 0, valorRepasse, n(formaPred), 'pendente', competencia]);
 
         repasseCalculado = valorRepasse;
       }

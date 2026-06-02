@@ -10,6 +10,7 @@ import Agenda from './pages/Agenda'
 import NovoAgendamento from './pages/Agenda/NovoAgendamento'
 import Financeiro from './pages/Financeiro'
 import Configuracoes from './pages/Configuracoes'
+import Relatorios from './pages/Relatorios'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -25,6 +26,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="agenda" element={<Agenda />} />
           <Route path="agenda/novo" element={<NovoAgendamento />} />
           <Route path="financeiro" element={<Financeiro />} />
+          <Route path="relatorios" element={<Relatorios />} />
           <Route path="configuracoes" element={<Configuracoes />} />
         </Route>
       </Routes>

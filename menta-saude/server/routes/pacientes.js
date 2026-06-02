@@ -52,13 +52,13 @@ router.get('/:id', (req, res) => {
 
 router.post('/', (req, res) => {
   try {
-    const { nome, telefone, email, data_nascimento, anamnese, historico_clinico, status_retorno, origem } = req.body;
+    const { nome, telefone, email, data_nascimento, cpf, endereco, profissao, anamnese, historico_clinico, status_retorno, origem } = req.body;
     if (!nome) return res.status(400).json({ erro: 'Nome é obrigatório' });
 
     const resultado = run(`
-      INSERT INTO pacientes (nome, telefone, email, data_nascimento, anamnese, historico_clinico, status_retorno, origem)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `, [nome, n(telefone), n(email), n(data_nascimento), n(anamnese), n(historico_clinico), status_retorno || 'ativo', n(origem)]);
+      INSERT INTO pacientes (nome, telefone, email, data_nascimento, cpf, endereco, profissao, anamnese, historico_clinico, status_retorno, origem)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [nome, n(telefone), n(email), n(data_nascimento), n(cpf), n(endereco), n(profissao), n(anamnese), n(historico_clinico), status_retorno || 'ativo', n(origem)]);
 
     const novo = get('SELECT * FROM pacientes WHERE id = ?', resultado.lastInsertRowid);
     res.status(201).json(novo);
@@ -72,14 +72,15 @@ router.put('/:id', (req, res) => {
     const paciente = get('SELECT id FROM pacientes WHERE id = ?', req.params.id);
     if (!paciente) return res.status(404).json({ erro: 'Paciente não encontrado' });
 
-    const { nome, telefone, email, data_nascimento, anamnese, historico_clinico, status_retorno, origem } = req.body;
+    const { nome, telefone, email, data_nascimento, cpf, endereco, profissao, anamnese, historico_clinico, status_retorno, origem } = req.body;
 
     run(`
       UPDATE pacientes
       SET nome = ?, telefone = ?, email = ?, data_nascimento = ?,
+          cpf = ?, endereco = ?, profissao = ?,
           anamnese = ?, historico_clinico = ?, status_retorno = ?, origem = ?
       WHERE id = ?
-    `, [nome, n(telefone), n(email), n(data_nascimento), n(anamnese), n(historico_clinico), n(status_retorno), n(origem), req.params.id]);
+    `, [nome, n(telefone), n(email), n(data_nascimento), n(cpf), n(endereco), n(profissao), n(anamnese), n(historico_clinico), n(status_retorno), n(origem), req.params.id]);
 
     const atualizado = get('SELECT * FROM pacientes WHERE id = ?', req.params.id);
     res.json(atualizado);

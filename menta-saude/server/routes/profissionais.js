@@ -20,13 +20,13 @@ router.get('/', (req, res) => {
 
 router.post('/', (req, res) => {
   try {
-    const { nome, especialidade, percentual_padrao, percentual_cartao, percentual_parcelado, observacoes } = req.body;
+    const { nome, especialidade, percentual_padrao, percentual_cartao, percentual_parcelado, observacoes, tipo_repasse, valor_diaria, regras_especiais } = req.body;
     if (!nome) return res.status(400).json({ erro: 'Nome é obrigatório' });
 
     const resultado = run(`
-      INSERT INTO profissionais (nome, especialidade, percentual_padrao, percentual_cartao, percentual_parcelado, observacoes)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `, [nome, n(especialidade), n(percentual_padrao), n(percentual_cartao), n(percentual_parcelado), n(observacoes)]);
+      INSERT INTO profissionais (nome, especialidade, percentual_padrao, percentual_cartao, percentual_parcelado, observacoes, tipo_repasse, valor_diaria, regras_especiais)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [nome, n(especialidade), n(percentual_padrao), n(percentual_cartao), n(percentual_parcelado), n(observacoes), tipo_repasse || 'percentual_por_procedimento', n(valor_diaria), n(regras_especiais)]);
 
     const novo = get('SELECT * FROM profissionais WHERE id = ?', resultado.lastInsertRowid);
     res.status(201).json(novo);
@@ -40,15 +40,16 @@ router.put('/:id', (req, res) => {
     const profissional = get('SELECT id FROM profissionais WHERE id = ?', req.params.id);
     if (!profissional) return res.status(404).json({ erro: 'Profissional não encontrado' });
 
-    const { nome, especialidade, percentual_padrao, percentual_cartao, percentual_parcelado, observacoes, ativo } = req.body;
+    const { nome, especialidade, percentual_padrao, percentual_cartao, percentual_parcelado, observacoes, ativo, tipo_repasse, valor_diaria, regras_especiais } = req.body;
     const ativoVal = ativo !== undefined ? (ativo ? 1 : 0) : 1;
 
     run(`
       UPDATE profissionais
       SET nome = ?, especialidade = ?, percentual_padrao = ?, percentual_cartao = ?,
-          percentual_parcelado = ?, observacoes = ?, ativo = ?
+          percentual_parcelado = ?, observacoes = ?, ativo = ?,
+          tipo_repasse = ?, valor_diaria = ?, regras_especiais = ?
       WHERE id = ?
-    `, [nome, n(especialidade), n(percentual_padrao), n(percentual_cartao), n(percentual_parcelado), n(observacoes), ativoVal, req.params.id]);
+    `, [nome, n(especialidade), n(percentual_padrao), n(percentual_cartao), n(percentual_parcelado), n(observacoes), ativoVal, tipo_repasse || 'percentual_por_procedimento', n(valor_diaria), n(regras_especiais), req.params.id]);
 
     const atualizado = get('SELECT * FROM profissionais WHERE id = ?', req.params.id);
     res.json(atualizado);

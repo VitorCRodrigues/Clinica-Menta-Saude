@@ -5,6 +5,7 @@ const itens = [
   { caminho: '/agenda', rotulo: 'Agenda', icone: '📅' },
   { caminho: '/pacientes', rotulo: 'Pacientes', icone: '👤' },
   { caminho: '/financeiro', rotulo: 'Financeiro', icone: '💰' },
+  { caminho: '/relatorios', rotulo: 'Relatórios', icone: '📊' },
   { caminho: '/configuracoes', rotulo: 'Configurações', icone: '⚙' },
 ]
 

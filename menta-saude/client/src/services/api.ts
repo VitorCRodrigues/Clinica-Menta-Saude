@@ -1,4 +1,4 @@
-import type { Paciente, Profissional, Servico, Atendimento, Financeiro, Repasse, DashboardData } from '../types'
+import type { Paciente, Profissional, Servico, Atendimento, Financeiro, Repasse, DashboardData, RelatorioData, HorarioFuncionamento } from '../types'
 
 const BASE = '/api'
 
@@ -97,3 +97,14 @@ export const listarRepassesProfissional = (id: number, params?: { status?: strin
 
 export const atualizarRepasse = (id: number, dados: Partial<Repasse>) =>
   requisitar<Repasse>(`/repasses/${id}`, { method: 'PUT', body: JSON.stringify(dados) })
+
+// Relatórios
+export const buscarRelatorios = (params: { mes: number; ano: number }) =>
+  requisitar<RelatorioData>(`/relatorios?mes=${params.mes}&ano=${params.ano}`)
+
+// Horários de funcionamento
+export const listarHorarios = () =>
+  requisitar<HorarioFuncionamento[]>('/horarios')
+
+export const atualizarHorario = (dia: number, dados: Partial<HorarioFuncionamento>) =>
+  requisitar<HorarioFuncionamento[]>(`/horarios/${dia}`, { method: 'PUT', body: JSON.stringify(dados) })

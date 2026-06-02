@@ -16,6 +16,8 @@ app.use('/api/servicos', require('./routes/servicos'));
 app.use('/api/atendimentos', require('./routes/atendimentos'));
 app.use('/api/financeiro', require('./routes/financeiro'));
 app.use('/api/repasses', require('./routes/repasses'));
+app.use('/api/relatorios', require('./routes/relatorios'));
+app.use('/api/horarios', require('./routes/horarios'));
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

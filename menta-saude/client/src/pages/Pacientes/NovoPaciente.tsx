@@ -5,6 +5,15 @@ import BotaoPrimario from '../../components/BotaoPrimario'
 import CampoTexto from '../../components/CampoTexto'
 import CampoSelect from '../../components/CampoSelect'
 
+function mascaraCPF(valor: string) {
+  return valor
+    .replace(/\D/g, '')
+    .slice(0, 11)
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+}
+
 export default function NovoPaciente() {
   const navigate = useNavigate()
   const [salvando, setSalvando] = useState(false)
@@ -14,6 +23,9 @@ export default function NovoPaciente() {
     telefone: '',
     email: '',
     data_nascimento: '',
+    cpf: '',
+    endereco: '',
+    profissao: '',
     anamnese: '',
     historico_clinico: '',
     status_retorno: 'ativo',
@@ -74,10 +86,30 @@ export default function NovoPaciente() {
             placeholder="email@exemplo.com"
           />
           <CampoTexto
+            rotulo="CPF"
+            value={form.cpf}
+            onChange={(e) => atualizar('cpf', mascaraCPF(e.target.value))}
+            placeholder="000.000.000-00"
+          />
+          <CampoTexto
             rotulo="Data de nascimento"
             type="date"
             value={form.data_nascimento}
             onChange={(e) => atualizar('data_nascimento', e.target.value)}
+          />
+          <div className="md:col-span-2">
+            <CampoTexto
+              rotulo="Endereço"
+              value={form.endereco}
+              onChange={(e) => atualizar('endereco', e.target.value)}
+              placeholder="Rua, número, bairro, cidade"
+            />
+          </div>
+          <CampoTexto
+            rotulo="Profissão"
+            value={form.profissao}
+            onChange={(e) => atualizar('profissao', e.target.value)}
+            placeholder="Ex: Professor, Engenheiro..."
           />
           <CampoTexto
             rotulo="Origem"

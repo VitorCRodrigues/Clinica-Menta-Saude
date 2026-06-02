@@ -17,6 +17,15 @@ function formatarMoeda(valor?: number) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)
 }
 
+function mascaraCPF(valor: string) {
+  return valor
+    .replace(/\D/g, '')
+    .slice(0, 11)
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+}
+
 const corStatus: Record<string, string> = {
   agendado: 'bg-blue-100 text-blue-700',
   confirmado: 'bg-principal-claro text-principal',
@@ -104,10 +113,29 @@ export default function FichaPaciente() {
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
               />
               <CampoTexto
+                rotulo="CPF"
+                value={form.cpf || ''}
+                onChange={(e) => setForm((f) => ({ ...f, cpf: mascaraCPF(e.target.value) }))}
+                placeholder="000.000.000-00"
+              />
+              <CampoTexto
                 rotulo="Data de nascimento"
                 type="date"
                 value={form.data_nascimento || ''}
                 onChange={(e) => setForm((f) => ({ ...f, data_nascimento: e.target.value }))}
+              />
+              <div className="md:col-span-2">
+                <CampoTexto
+                  rotulo="Endereço"
+                  value={form.endereco || ''}
+                  onChange={(e) => setForm((f) => ({ ...f, endereco: e.target.value }))}
+                  placeholder="Rua, número, bairro, cidade"
+                />
+              </div>
+              <CampoTexto
+                rotulo="Profissão"
+                value={form.profissao || ''}
+                onChange={(e) => setForm((f) => ({ ...f, profissao: e.target.value }))}
               />
               <CampoTexto
                 rotulo="Origem"
@@ -122,6 +150,7 @@ export default function FichaPaciente() {
                   { valor: 'ativo', rotulo: 'Ativo' },
                   { valor: 'inativo', rotulo: 'Inativo' },
                   { valor: 'aguardando', rotulo: 'Aguardando' },
+                  { valor: 'retornou', rotulo: 'Retornou' },
                 ]}
               />
               <div className="md:col-span-2 flex flex-col gap-1">
@@ -148,7 +177,9 @@ export default function FichaPaciente() {
               {[
                 { r: 'Telefone', v: paciente.telefone },
                 { r: 'E-mail', v: paciente.email },
+                { r: 'CPF', v: paciente.cpf },
                 { r: 'Nascimento', v: paciente.data_nascimento ? formatarData(paciente.data_nascimento) : undefined },
+                { r: 'Profissão', v: paciente.profissao },
                 { r: 'Origem', v: paciente.origem },
                 { r: 'Status', v: paciente.status_retorno },
               ].map(({ r, v }) => (
@@ -157,6 +188,12 @@ export default function FichaPaciente() {
                   <dd className="text-gray-700 font-medium">{v || '—'}</dd>
                 </div>
               ))}
+              {paciente.endereco && (
+                <div className="md:col-span-2">
+                  <dt className="text-gray-400 text-xs uppercase">Endereço</dt>
+                  <dd className="text-gray-700 font-medium">{paciente.endereco}</dd>
+                </div>
+              )}
               {paciente.anamnese && (
                 <div className="md:col-span-2">
                   <dt className="text-gray-400 text-xs uppercase mb-1">Anamnese</dt>

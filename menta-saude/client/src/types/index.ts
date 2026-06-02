@@ -4,13 +4,18 @@ export interface Paciente {
   telefone?: string
   email?: string
   data_nascimento?: string
+  cpf?: string
+  endereco?: string
+  profissao?: string
   anamnese?: string
   historico_clinico?: string
-  status_retorno: 'ativo' | 'inativo' | 'aguardando'
+  status_retorno: 'ativo' | 'inativo' | 'aguardando' | 'retornou'
   origem?: string
   created_at: string
   atendimentos?: Atendimento[]
 }
+
+export type TipoRepasse = 'percentual_por_procedimento' | 'percentual_mensal' | 'fixo_por_dente' | 'diaria'
 
 export interface Profissional {
   id: number
@@ -21,6 +26,9 @@ export interface Profissional {
   percentual_parcelado?: number
   observacoes?: string
   ativo: number
+  tipo_repasse?: TipoRepasse
+  valor_diaria?: number
+  regras_especiais?: string
 }
 
 export interface Servico {
@@ -48,12 +56,17 @@ export interface Atendimento {
   financeiro?: Financeiro[]
 }
 
+export type FormaPagamento = 'dinheiro' | 'pix' | 'cartao_debito' | 'cartao_credito' | 'transferencia'
+
 export interface Financeiro {
   id: number
   atendimento_id: number
   valor_recebido: number
-  forma_pagamento?: 'dinheiro' | 'pix' | 'cartao_debito' | 'cartao_credito' | 'transferencia'
+  forma_pagamento?: FormaPagamento
   num_parcelas: number
+  forma_pagamento_2?: FormaPagamento
+  valor_pagamento_2?: number
+  num_parcelas_2?: number
   status_pagamento: 'pendente' | 'pago' | 'cancelado'
   data_pagamento?: string
   observacoes?: string
@@ -88,4 +101,23 @@ export interface DashboardData {
   aniversariantes: { id: number; nome: string; telefone?: string; data_nascimento: string }[]
   sem_consulta: { id: number; nome: string; telefone?: string; ultima_consulta: string | null }[]
   repasses_pendentes: { profissional_id: number; profissional_nome: string; quantidade: number; total_pendente: number }[]
+}
+
+export interface HorarioFuncionamento {
+  dia_semana: number
+  nome_dia: string
+  hora_inicio: string
+  hora_fim: string
+  ativo: number
+}
+
+export interface RelatorioData {
+  periodo: { mes: number; ano: number; inicio: string; fim: string }
+  pacientes_novos: number
+  consultas_realizadas: number
+  por_procedimento: { procedimento: string | null; quantidade: number }[]
+  retornaram: number
+  receita_total: number
+  repasses_por_dentista: { profissional: string; quantidade: number; total_bruto: number; total_repasse: number; status: string }[]
+  consultas_por_dia: { data: string; quantidade: number }[]
 }
