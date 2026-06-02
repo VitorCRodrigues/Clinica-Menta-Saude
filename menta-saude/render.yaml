@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: menta-saude-api
+    env: node
+    buildCommand: npm install
+    startCommand: node server/index.js
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PORT
+        value: 3001

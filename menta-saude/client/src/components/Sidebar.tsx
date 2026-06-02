@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 
 const itens = [
   { caminho: '/dashboard', rotulo: 'Dashboard', icone: '▦' },
@@ -10,6 +11,8 @@ const itens = [
 ]
 
 export default function Sidebar() {
+  const { usuario, logout } = useAuth()
+
   return (
     <aside className="w-56 min-h-screen bg-principal flex flex-col">
       <div className="px-6 py-5 border-b border-principal-escuro">
@@ -44,7 +47,13 @@ export default function Sidebar() {
       </nav>
 
       <div className="px-6 py-4 border-t border-principal-escuro">
-        <p className="text-white/50 text-xs">v1.0.0</p>
+        <p className="text-white/80 text-xs font-medium truncate mb-2">{usuario?.nome}</p>
+        <button
+          onClick={logout}
+          className="text-white/50 text-xs hover:text-white/90 transition-colors flex items-center gap-1"
+        >
+          <span>↩</span> Sair
+        </button>
       </div>
     </aside>
   )

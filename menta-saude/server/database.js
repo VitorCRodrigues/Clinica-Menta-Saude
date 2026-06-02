@@ -1,6 +1,7 @@
 const initSqlJs = require('sql.js');
 const fs = require('fs');
 const path = require('path');
+const bcrypt = require('bcryptjs');
 
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_PATH = path.join(DATA_DIR, 'menta.db');
@@ -110,9 +111,20 @@ async function inicializarBanco() {
     ativo INTEGER DEFAULT 1
   )`);
 
+  db.run(`CREATE TABLE IF NOT EXISTS usuarios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    senha_hash TEXT NOT NULL,
+    perfil TEXT DEFAULT 'secretaria',
+    ativo INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now'))
+  )`);
+
   migrar();
   seedServicos();
   seedHorarios();
+  await seedAdmin();
   salvarBanco();
   return db;
 }
@@ -150,6 +162,16 @@ function seedHorarios() {
       [dia, '09:00', '18:00', ativo]
     );
   }
+}
+
+async function seedAdmin() {
+  const existe = db.exec("SELECT COUNT(*) FROM usuarios WHERE email = 'admin@mentasaude.com'");
+  if (existe[0].values[0][0] > 0) return;
+  const senha_hash = await bcrypt.hash('menta2026', 10);
+  db.run(
+    "INSERT INTO usuarios (nome, email, senha_hash, perfil) VALUES (?, ?, ?, ?)",
+    ['Administrador', 'admin@mentasaude.com', senha_hash, 'admin']
+  );
 }
 
 function migrar() {

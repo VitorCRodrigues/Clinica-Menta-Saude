@@ -1,10 +1,18 @@
 import type { Paciente, Profissional, Servico, Atendimento, Financeiro, Repasse, DashboardData, RelatorioData, HorarioFuncionamento } from '../types'
 
-const BASE = '/api'
+const BASE = (import.meta.env.VITE_API_URL || '') + '/api'
+
+function getToken() {
+  return localStorage.getItem('menta_token')
+}
 
 async function requisitar<T>(url: string, opcoes?: RequestInit): Promise<T> {
+  const token = getToken()
   const resposta = await fetch(`${BASE}${url}`, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     ...opcoes,
   })
   const dados = await resposta.json()

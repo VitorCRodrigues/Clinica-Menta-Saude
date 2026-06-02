@@ -7,7 +7,7 @@ export default defineConfig({
     port: 5173,
 
     allowedHosts: [
-      'unmilitarily-trappy-alfred.ngrok-free.dev'
+      'checked-gypseian-berneice.ngrok-free.dev'
     ],
 
     proxy: {
